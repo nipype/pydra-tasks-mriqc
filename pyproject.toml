@@ -3,7 +3,7 @@ requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pydra-mriqc"
+name = "pydra-tasks-mriqc"
 description = "Pydra tasks package for mriqc"
 readme = "README.rst"
 requires-python = ">=3.10"

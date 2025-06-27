@@ -1,0 +1,9 @@
+antsAffineInitializer
+3
+/Users/tclose/git/workflows/mriqc/work/mriqc_wf/anatMRIQC/SpatialNormalization/_in_file_..Users..tclose..Data..openneuro..ds000114..sub-03..ses-retest..anat..sub-03_ses-retest_T1w.nii.gz/SpatialNormalization/fixed_masked.nii.gz
+/Users/tclose/git/workflows/mriqc/work/mriqc_wf/anatMRIQC/SpatialNormalization/_in_file_..Users..tclose..Data..openneuro..ds000114..sub-03..ses-retest..anat..sub-03_ses-retest_T1w.nii.gz/SpatialNormalization/moving_masked.nii.gz
+transform.mat
+15.000000
+0.100000
+0
+10

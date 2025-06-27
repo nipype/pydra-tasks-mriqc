@@ -1,5 +1,6 @@
 from fileformats.medimage import NiftiGzX, T1Weighted
 import logging
+import tempfile
 from pathlib import Path
 from pydra.tasks.mriqc.workflows.anatomical.base import anat_qc_workflow
 
@@ -12,7 +13,13 @@ file_handler = logging.FileHandler(str(log_file))
 pydra_logger.addHandler(file_handler)
 pydra_logger.addHandler(logging.StreamHandler())
 
-workflow = anat_qc_workflow(in_file=NiftiGzX[T1Weighted].sample(), modality="T1w")
+in_file = NiftiGzX[T1Weighted].sample()
+
+tmp_dir = Path(tempfile.mkdtemp())
+
+in_file = in_file.copy(tmp_dir, new_stem="sub-01_T1w")
+
+workflow = anat_qc_workflow(in_file=in_file, modality="T1w")
 workflow.cache_dir = "/Users/tclose/Data/pydra-mriqc-test-cache"
 result = workflow(plugin="serial")
 print(result.out)

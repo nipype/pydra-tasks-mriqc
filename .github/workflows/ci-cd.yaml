@@ -145,7 +145,7 @@ jobs:
       if: ${{ always() }}
       with:
         files: coverage.xml
-        name: pydra-mriqc
+        name: pydra-tasks-mriqc
 
   deploy:
     needs: [test]

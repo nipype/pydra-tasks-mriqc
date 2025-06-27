@@ -1,0 +1,82 @@
+# Copyright 2023 The NiPreps Developers <nipreps@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# We support and encourage derived works from this project, please read
+# about our expectations at
+#
+#     https://www.nipreps.org/community/licensing/
+#
+###########################################################################
+# Reports bootstrap file
+# ======================
+# This is a YAML-formatted file specifying how the NiReports assembler
+# will search for "reportlets" and compose them into a report file,
+# typically in HTML format.
+###########################################################################
+
+packagename: mriqc
+title: '{filename} :: Diffusion MRI MRIQC report'
+sections:
+- name: Summary
+  reportlets:
+  - bids: {datatype: figures, desc: summary, extension: [.html]}
+  - bids: {datatype: figures, desc: heatmap}
+    caption: This visualization divides the data by shells, and shows the joint distribution
+      of SNR vs. FA. At the bottom, the distributions are marginalized for SNR.
+      Please note that the figures of SNR provided are calculated with a coarse estimation of
+      the signal variability, and therefore should be interpreted with care.
+    subtitle: Shell-wise joint distribution of SNR vs. FA in every voxel
+  - bids: {datatype: figures, desc: fa}
+    caption: Reconstructed FA map.
+    subtitle: Fractional anisotropy (FA) map
+  - bids: {datatype: figures, desc: md}
+    caption: Reconstructed MD map.
+    subtitle: Mean diffusivity (MD) map
+- name: DWI shells
+  ordering: bval
+  reportlets:
+  - bids: {datatype: figures, desc: avgstd}
+    caption: This panel shows mosaics flickering between the voxel-wise average and standard deviation
+      for each shell.
+    subtitle: Voxel-wise average and standard deviation across volumes in this <em>DWI shell</em>.
+    static: false
+  - bids: {datatype: figures, desc: background}
+    caption: This panel shows a mosaic enhancing the background around the head.
+      Artifacts usually unveil themselves in the air surrounding the head, where no signal
+      sources are present.
+    subtitle: View of the background of the voxel-wise average of this <em>DWI shell</em>
+
+- name: About
+  nested: true
+  reportlets:
+  - custom: errors
+    path: '{reportlets_dir}/{run_uuid}'
+    captions: <em>MRIQC</em> may have recorded failure conditions.
+    title: Errors
+  - metadata: "input"
+    settings:
+      # By default, only the first dictionary will be expanded.
+      # If folded is true, all will be folded. If false all expanded.
+      folded: true
+      # If an ID is not provided, one should be generated automatically
+      id: 'about-metadata'
+    caption: |
+      Thanks for using <em>MRIQC</em>. The following information may assist in
+      reconstructing the provenance of the corresponding derivatives.
+    title: Reproducibility and provenance information
+
+# Rating widget
+plugins:
+- module: nireports.assembler
+  path: data/rating-widget/bootstrap.yml

@@ -22,6 +22,10 @@ config_params:
     varname: config.environment
     type: struct
     module: mriqc
+  inputs_entities:
+    varname: config.workflow.inputs_entities
+    type: struct
+    module: mriqc
 omit_functions:
   - nipype.external.due.BibTeX
 omit_classes:
