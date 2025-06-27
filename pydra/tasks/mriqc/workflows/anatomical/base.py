@@ -51,17 +51,7 @@ def anat_qc_workflow(
     wf_inputs_metadata=None,
     wf_species="human",
     wf_template_id="MNI152NLin2009cAsym",
-) -> [
-    "ty.Any",
-    "ty.Any",
-    "ty.Any",
-    "ty.Any",
-    "ty.Any",
-    "ty.Any",
-    "ty.Any",
-    "ty.Any",
-    "ty.Any",
-]:
+) -> tuple[ty.Any, ty.Any, ty.Any, ty.Any, ty.Any, ty.Any, ty.Any, ty.Any, ty.Any]:
     """
     One-subject-one-session-one-run pipeline to extract the NR-IQMs from
     anatomical images
@@ -151,10 +141,10 @@ def anat_qc_workflow(
     norm = workflow.add(
         spatial_normalization(
             wf_species=wf_species,
+            nipype_omp_nthreads=nipype_omp_nthreads,
             wf_template_id=wf_template_id,
             exec_ants_float=exec_ants_float,
             exec_debug=exec_debug,
-            nipype_omp_nthreads=nipype_omp_nthreads,
             modality=modality,
             name="norm",
         )
@@ -196,9 +186,9 @@ def anat_qc_workflow(
     # Reports
     anat_report_wf = workflow.add(
         init_anat_report_wf(
-            wf_species=wf_species,
             exec_verbose_reports=exec_verbose_reports,
             exec_work_dir=exec_work_dir,
+            wf_species=wf_species,
             in_ras=to_ras.out_file,
             headmask=hmsk.out_file,
             airmask=amw.air_mask,
@@ -235,12 +225,12 @@ def anat_qc_workflow(
         # fmt: on
     outputs_["norm_report"] = norm.report
     outputs_["iqmswf_noise_report"] = iqmswf.noise_report
+    outputs_["anat_report_wf_airmask_report"] = anat_report_wf.airmask_report
+    outputs_["anat_report_wf_bg_report"] = anat_report_wf.bg_report
     outputs_["anat_report_wf_bmask_report"] = anat_report_wf.bmask_report
     outputs_["anat_report_wf_artmask_report"] = anat_report_wf.artmask_report
-    outputs_["anat_report_wf_headmask_report"] = anat_report_wf.headmask_report
-    outputs_["anat_report_wf_bg_report"] = anat_report_wf.bg_report
-    outputs_["anat_report_wf_airmask_report"] = anat_report_wf.airmask_report
     outputs_["anat_report_wf_zoom_report"] = anat_report_wf.zoom_report
+    outputs_["anat_report_wf_headmask_report"] = anat_report_wf.headmask_report
     outputs_["anat_report_wf_segm_report"] = anat_report_wf.segm_report
 
     return tuple(outputs_)
@@ -252,7 +242,7 @@ def airmsk_wf(
     in_file: ty.Any = attrs.NOTHING,
     ind2std_xfm: ty.Any = attrs.NOTHING,
     name="AirMaskWorkflow",
-) -> ["ty.Any", "ty.Any", "ty.Any", "ty.Any"]:
+) -> tuple[ty.Any, ty.Any, ty.Any, ty.Any]:
     """
     Calculate air, artifacts and "hat" masks to evaluate noise in the background.
 
@@ -314,7 +304,7 @@ def headmsk_wf(
     name="HeadMaskWorkflow",
     omp_nthreads=1,
     wf_species="human",
-) -> ["ty.Any", "ty.Any"]:
+) -> tuple[ty.Any, ty.Any]:
     """
     Computes a head mask as in [Mortamet2009]_.
 
@@ -337,56 +327,32 @@ def headmsk_wf(
         return [f for f in inlist if "WM" in f][0]
 
     enhance = workflow.add(
-        FunctionTask(
-            func=_enhance,
-            input_spec=SpecInfo(
-                name="FunctionIn",
-                bases=(BaseSpec,),
-                fields=[("in_file", ty.Any), ("wm_tpm", ty.Any)],
-            ),
-            output_spec=SpecInfo(
-                name="FunctionOut", bases=(BaseSpec,), fields=[("out_file", ty.Any)]
-            ),
-            in_file=in_file,
-            wm_tpm=in_tpms,
-        ),
+        python.define(
+            _enhance,
+            inputs={"in_file": ty.Any, "wm_tpm": ty.Any},
+            outputs={"out_file": ty.Any},
+        )(in_file=in_file, wm_tpm=in_tpms),
         name="enhance",
     )
     gradient = workflow.add(
-        FunctionTask(
-            func=image_gradient,
-            input_spec=SpecInfo(
-                name="FunctionIn",
-                bases=(BaseSpec,),
-                fields=[("in_file", ty.Any), ("brainmask", ty.Any), ("sigma", ty.Any)],
-            ),
-            output_spec=SpecInfo(
-                name="FunctionOut", bases=(BaseSpec,), fields=[("out_file", ty.Any)]
-            ),
-            brainmask=brainmask,
-            in_file=enhance.out_file,
-        ),
+        python.define(
+            image_gradient,
+            inputs={"in_file": ty.Any, "brainmask": ty.Any, "sigma": ty.Any},
+            outputs={"out_file": ty.Any},
+        )(brainmask=brainmask, in_file=enhance.out_file),
         name="gradient",
     )
     thresh = workflow.add(
-        FunctionTask(
-            func=gradient_threshold,
-            input_spec=SpecInfo(
-                name="FunctionIn",
-                bases=(BaseSpec,),
-                fields=[
-                    ("in_file", ty.Any),
-                    ("brainmask", ty.Any),
-                    ("aniso", ty.Any),
-                    ("thresh", ty.Any),
-                ],
-            ),
-            output_spec=SpecInfo(
-                name="FunctionOut", bases=(BaseSpec,), fields=[("out_file", ty.Any)]
-            ),
-            brainmask=brainmask,
-            in_file=gradient.out_file,
-        ),
+        python.define(
+            gradient_threshold,
+            inputs={
+                "in_file": ty.Any,
+                "brainmask": ty.Any,
+                "aniso": ty.Any,
+                "thresh": ty.Any,
+            },
+            outputs={"out_file": ty.Any},
+        )(brainmask=brainmask, in_file=gradient.out_file),
         name="thresh",
     )
     if wf_species != "human":
@@ -412,7 +378,7 @@ def init_brain_tissue_segmentation(
     name="brain_tissue_segmentation",
     nipype_omp_nthreads=12,
     std_tpms: ty.Any = attrs.NOTHING,
-) -> ["ty.Any", "ty.Any"]:
+) -> tuple[ty.Any, ty.Any]:
     """
     Setup a workflow for brain tissue segmentation.
 
@@ -454,15 +420,12 @@ def init_brain_tissue_segmentation(
         return file_format, out_files
 
     format_tpm_names = workflow.add(
-        FunctionTask(
+        python.define(
+            _format_tpm_names,
+            inputs={"in_files": ty.Any},
+            outputs={"file_format": ty.Any},
+        )(
             execution={"keep_inputs": True, "remove_unnecessary_outputs": False},
-            func=_format_tpm_names,
-            input_spec=SpecInfo(
-                name="FunctionIn", bases=(BaseSpec,), fields=[("in_files", ty.Any)]
-            ),
-            output_spec=SpecInfo(
-                name="FunctionOut", bases=(BaseSpec,), fields=[("file_format", ty.Any)]
-            ),
             in_files=std_tpms,
         ),
         name="format_tpm_names",
@@ -510,7 +473,7 @@ def spatial_normalization(
     nipype_omp_nthreads=12,
     wf_species="human",
     wf_template_id="MNI152NLin2009cAsym",
-) -> ["ty.Any", "ty.Any", "ty.Any"]:
+) -> tuple[ty.Any, ty.Any, ty.Any]:
     """Create a simplified workflow to perform fast spatial normalization."""
     from pydra.tasks.niworkflows.interfaces.reportlets.registration import (
         SpatialNormalizationRPT as RobustMNINormalization,
@@ -595,7 +558,7 @@ def compute_iqms(
     segmentation: ty.Any = attrs.NOTHING,
     std_tpms: ty.Any = attrs.NOTHING,
     wf_species="human",
-) -> ["ty.Any", "ty.Any"]:
+) -> tuple[ty.Any, ty.Any]:
     """
     Setup the workflow that actually computes the IQMs.
 

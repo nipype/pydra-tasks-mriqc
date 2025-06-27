@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 @workflow.define(outputs=["out_brain", "bias_image", "out_mask", "out_corrected"])
 def synthstrip_wf(
     in_files: ty.Any = attrs.NOTHING, name="synthstrip_wf", omp_nthreads=None
-) -> ["ty.Any", "ty.Any", "ty.Any", "ty.Any"]:
+) -> tuple[ty.Any, ty.Any, ty.Any, ty.Any]:
     """Create a brain-extraction workflow using SynthStrip."""
     from pydra.tasks.ants.auto import N4BiasFieldCorrection
 

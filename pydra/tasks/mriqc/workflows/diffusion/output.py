@@ -1,7 +1,7 @@
 import attrs
 import logging
 from pathlib import Path
-from pydra.compose import workflow
+from pydra.compose import python, workflow
 from pydra.tasks.mriqc.workflows.diffusion.output import init_dwi_report_wf
 from pydra.tasks.nireports.interfaces.dmri import DWIHeatmap
 from pydra.tasks.nireports.interfaces.reporting.base import (
@@ -41,7 +41,7 @@ def init_dwi_report_wf(
     wf_biggest_file_gb=1,
     wf_fd_thres=0.2,
     wf_species="human",
-) -> ["ty.Any", "ty.Any", "ty.Any", "ty.Any", "ty.Any", "ty.Any", "ty.Any", "ty.Any"]:
+) -> tuple[ty.Any, ty.Any, ty.Any, ty.Any, ty.Any, ty.Any, ty.Any, ty.Any]:
     """
     Write out individual reportlets.
 
@@ -118,7 +118,7 @@ def init_dwi_report_wf(
     outputs_['md_report'] = mosaic_md.out_file
     # fmt: on
     get_wm = workflow.add(
-        FunctionTask(func=_get_wm, in_file=in_parcellation), name="get_wm"
+        python.define(_get_wm)(in_file=in_parcellation), name="get_wm"
     )
     plot_heatmap = workflow.add(
         DWIHeatmap(
