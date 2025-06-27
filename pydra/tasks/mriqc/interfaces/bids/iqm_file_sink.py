@@ -73,7 +73,7 @@ class IQMFileSink(python.Task["IQMFileSink.Outputs"]):
         fields = list(set(fields) - set(self_dict["inputs"].copyable_trait_names()))
         self_dict["_input_names"] = fields
         undefined_traits = {
-            key: _add_field(key, add_trait=add_trait, _outputs=_outputs)
+            key: _add_field(key, _outputs=_outputs, add_trait=add_trait)
             for key in fields
         }
         self_dict["inputs"].trait_set(trait_change_notify=False, **undefined_traits)
@@ -82,7 +82,7 @@ class IQMFileSink(python.Task["IQMFileSink.Outputs"]):
             self_dict["_always_run"] = True
         self_dict = {}
         out_file = _gen_outfile(
-            in_file=in_file, out_dir=out_dir, dismiss_entities=dismiss_entities
+            dismiss_entities=dismiss_entities, out_dir=out_dir, in_file=in_file
         )
 
         if root is not attrs.NOTHING:
@@ -151,14 +151,14 @@ class IQMFileSink(python.Task["IQMFileSink.Outputs"]):
         return out_file
 
 
-def _add_field(name, value=attrs.NOTHING, add_trait=None, _outputs=None):
+def _add_field(name, value=attrs.NOTHING, _outputs=None, add_trait=None):
     self_dict = {}
     self_dict["inputs"].add_trait(name, traits.Any)
     _outputs[name] = value
     return value
 
 
-def _gen_outfile(in_file=None, out_dir=None, dismiss_entities=None):
+def _gen_outfile(dismiss_entities=None, out_dir=None, in_file=None):
     out_dir = Path()
     if out_dir is not attrs.NOTHING:
         out_dir = Path(out_dir)

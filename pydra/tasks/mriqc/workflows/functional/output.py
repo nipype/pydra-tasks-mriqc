@@ -1,7 +1,7 @@
 import attrs
 import logging
 from pathlib import Path
-from pydra.compose import workflow
+from pydra.compose import python, workflow
 import typing as ty
 
 
@@ -38,7 +38,7 @@ def init_func_report_wf(
     wf_biggest_file_gb=1,
     wf_fft_spikes_detector=False,
     wf_species="human",
-) -> ["ty.Any", "ty.Any", "ty.Any", "ty.Any", "ty.Any", "ty.Any"]:
+) -> tuple[ty.Any, ty.Any, ty.Any, ty.Any, ty.Any, ty.Any]:
     """
     Write out individual reportlets.
 
@@ -78,20 +78,11 @@ def init_func_report_wf(
     # Set FD threshold
 
     spmask = workflow.add(
-        FunctionTask(
-            func=spikes_mask,
-            input_spec=SpecInfo(
-                name="FunctionIn",
-                bases=(BaseSpec,),
-                fields=[("in_file", ty.Any), ("in_mask", ty.Any)],
-            ),
-            output_spec=SpecInfo(
-                name="FunctionOut",
-                bases=(BaseSpec,),
-                fields=[("out_file", ty.Any), ("out_plot", ty.Any)],
-            ),
-            in_file=in_ras,
-        ),
+        python.define(
+            spikes_mask,
+            inputs={"in_file": ty.Any, "in_mask": ty.Any},
+            outputs={"out_file": ty.Any, "out_plot": ty.Any},
+        )(in_file=in_ras),
         name="spmask",
     )
     spikes_bg = workflow.add(
@@ -106,10 +97,8 @@ def init_func_report_wf(
         name="subtract_mask",
     )
     parcels = workflow.add(
-        FunctionTask(
-            func=_carpet_parcellation,
-            crown_mask=subtract_mask.out_mask,
-            segmentation=epi_parc,
+        python.define(_carpet_parcellation)(
+            crown_mask=subtract_mask.out_mask, segmentation=epi_parc
         ),
         name="parcels",
     )

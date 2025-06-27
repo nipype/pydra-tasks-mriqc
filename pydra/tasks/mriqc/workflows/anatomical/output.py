@@ -30,7 +30,7 @@ def init_anat_report_wf(
     name: str = "anat_report_wf",
     segmentation: ty.Any = attrs.NOTHING,
     wf_species="human",
-) -> ["ty.Any", "ty.Any", "ty.Any", "ty.Any", "ty.Any", "ty.Any", "ty.Any"]:
+) -> tuple[ty.Any, ty.Any, ty.Any, ty.Any, ty.Any, ty.Any, ty.Any]:
     """
     Generate the components of the individual report.
 
