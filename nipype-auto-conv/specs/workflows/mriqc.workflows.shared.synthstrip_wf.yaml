@@ -13,6 +13,7 @@ find_replace:
   - ["config = NipypeConfig\\(\\)", ""]
   - ["iflogger = logging.getLogger\\(\"nipype.interface\"\\)", ""]
   - ["logging = Logging\\(config\\)", ""]
+  - ["save_bias=True", "bias_image=True"]
 # name of the workflow variable that is returned
 workflow_variable: workflow
 # the names of the nested workflows that are defined in other modules and need to be imported

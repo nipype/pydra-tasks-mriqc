@@ -99,3 +99,4 @@ tests:
 doctests: []
 find_replace:
   - [config\.loggers\.\w+\., logger.]
+  - ["value=Undefined", "value=attrs.NOTHING"]

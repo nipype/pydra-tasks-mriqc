@@ -1,0 +1,9 @@
+antsAffineInitializer
+3
+/Users/tclose/Data/pydra-mriqc-test-cache/FunctionTask_9e6afe7c28f8064822f15f48c4fc3aa8/fixed_masked.nii.gz
+/Users/tclose/Data/pydra-mriqc-test-cache/FunctionTask_9e6afe7c28f8064822f15f48c4fc3aa8/moving_masked.nii.gz
+transform.mat
+15.0
+0.1
+False
+10

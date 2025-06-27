@@ -3,7 +3,7 @@ requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pydra-mriqc"
+name = "pydra-tasks-mriqc"
 description = "Pydra tasks package for mriqc"
 readme = "README.rst"
 requires-python = ">=3.10"
@@ -18,11 +18,11 @@ dependencies = [
     "nilearn",
     "migas >= 0.4.0",
     "pandas ~=1.0",
-    "pydra >=0.22",
+    "pydra >=0.23",
     "pydra-ants",
     "pydra-afni",
     "pydra-fsl",
-    "pydra-mrtrix3 >=3.0.3a0",
+    "pydra-mrtrix3 >=3.0.4a5",
     "pydra-niworkflows",
     "pydra-nireports",
     "PyYAML",
@@ -32,6 +32,7 @@ dependencies = [
     "statsmodels",
     "templateflow",
     "nilearn",
+    "nitransforms",
     "torch",
     "toml",
     "tomli >= 1.1.0; python_version < '3.11'",
@@ -103,3 +104,14 @@ per-file-ignores = ["__init__.py:F401,F403"]
 max-line-length = 88
 select = "C,E,F,W,B,B950"
 extend-ignore = ['E203', 'E501', 'E129', 'W503']
+
+[project.scripts]
+# abide2bids = "mriqc.bin.abide2bids:main"
+# dfcheck = "mriqc.bin.dfcheck:main"
+# fs2gif = "mriqc.bin.fs2gif:main"
+# mriqc = "mriqc.cli.run:main"
+# mriqc_labeler = "mriqc.bin.labeler:main"
+# mriqcwebapi_test = "mriqc.bin.mriqcwebapi_test:main"
+# nib-hash = "mriqc.bin.nib_hash:main"
+# participants = "mriqc.bin.subject_wrangler:main"
+synthstrip = "pydra.tasks.mriqc.synthstrip.cli:main"

@@ -6,6 +6,13 @@ nipype_name: anat_qc_workflow
 nipype_module: mriqc.workflows.anatomical.base
 # Name of the node that is to be considered the input of the workflow, i.e. its outputs will be the inputs of the workflow
 input_node: inputnode
+inputs:
+  in_file:
+    type: medimage/t1w+nifti-gz-x
+  modality:
+    type: field/text
+    connections:
+      - [norm, modality]
 # name of the workflow variable that is returned
 workflow_variable: workflow
 # the names of the nested workflows that are defined in other modules and need to be imported
@@ -21,3 +28,8 @@ find_replace:
       "# fmt: off\\n\\s*workflow.set_output\\(\\[\\('iqmswf_measures', workflow.iqmswf.lzout.measures\\)\\]\\)",
       "",
     ]
+  - [
+      "modality=workflow.lzin.modality,(\\s+)name=\"norm\"",
+      "modality=workflow.lzin.modality,\\1name=\"spatial_norm\"",
+    ]
+  - ["workflow\\.norm\\b", "workflow.spatial_norm"]
