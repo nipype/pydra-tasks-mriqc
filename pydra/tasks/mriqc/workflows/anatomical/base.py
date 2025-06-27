@@ -140,11 +140,11 @@ def anat_qc_workflow(
     # 4. Spatial Normalization, using ANTs
     norm = workflow.add(
         spatial_normalization(
-            wf_species=wf_species,
             nipype_omp_nthreads=nipype_omp_nthreads,
             wf_template_id=wf_template_id,
             exec_ants_float=exec_ants_float,
             exec_debug=exec_debug,
+            wf_species=wf_species,
             modality=modality,
             name="norm",
         )
@@ -186,9 +186,9 @@ def anat_qc_workflow(
     # Reports
     anat_report_wf = workflow.add(
         init_anat_report_wf(
+            wf_species=wf_species,
             exec_verbose_reports=exec_verbose_reports,
             exec_work_dir=exec_work_dir,
-            wf_species=wf_species,
             in_ras=to_ras.out_file,
             headmask=hmsk.out_file,
             airmask=amw.air_mask,
@@ -225,13 +225,13 @@ def anat_qc_workflow(
         # fmt: on
     outputs_["norm_report"] = norm.report
     outputs_["iqmswf_noise_report"] = iqmswf.noise_report
-    outputs_["anat_report_wf_airmask_report"] = anat_report_wf.airmask_report
-    outputs_["anat_report_wf_bg_report"] = anat_report_wf.bg_report
+    outputs_["anat_report_wf_segm_report"] = anat_report_wf.segm_report
     outputs_["anat_report_wf_bmask_report"] = anat_report_wf.bmask_report
     outputs_["anat_report_wf_artmask_report"] = anat_report_wf.artmask_report
-    outputs_["anat_report_wf_zoom_report"] = anat_report_wf.zoom_report
+    outputs_["anat_report_wf_airmask_report"] = anat_report_wf.airmask_report
+    outputs_["anat_report_wf_bg_report"] = anat_report_wf.bg_report
     outputs_["anat_report_wf_headmask_report"] = anat_report_wf.headmask_report
-    outputs_["anat_report_wf_segm_report"] = anat_report_wf.segm_report
+    outputs_["anat_report_wf_zoom_report"] = anat_report_wf.zoom_report
 
     return tuple(outputs_)
 
@@ -327,32 +327,19 @@ def headmsk_wf(
         return [f for f in inlist if "WM" in f][0]
 
     enhance = workflow.add(
-        python.define(
-            _enhance,
-            inputs={"in_file": ty.Any, "wm_tpm": ty.Any},
-            outputs={"out_file": ty.Any},
-        )(in_file=in_file, wm_tpm=in_tpms),
+        python.define(_enhance, outputs=["out_file"])(in_file=in_file, wm_tpm=in_tpms),
         name="enhance",
     )
     gradient = workflow.add(
-        python.define(
-            image_gradient,
-            inputs={"in_file": ty.Any, "brainmask": ty.Any, "sigma": ty.Any},
-            outputs={"out_file": ty.Any},
-        )(brainmask=brainmask, in_file=enhance.out_file),
+        python.define(image_gradient, outputs=["out_file"])(
+            brainmask=brainmask, in_file=enhance.out_file
+        ),
         name="gradient",
     )
     thresh = workflow.add(
-        python.define(
-            gradient_threshold,
-            inputs={
-                "in_file": ty.Any,
-                "brainmask": ty.Any,
-                "aniso": ty.Any,
-                "thresh": ty.Any,
-            },
-            outputs={"out_file": ty.Any},
-        )(brainmask=brainmask, in_file=gradient.out_file),
+        python.define(gradient_threshold, outputs=["out_file"])(
+            brainmask=brainmask, in_file=gradient.out_file
+        ),
         name="thresh",
     )
     if wf_species != "human":
@@ -420,11 +407,7 @@ def init_brain_tissue_segmentation(
         return file_format, out_files
 
     format_tpm_names = workflow.add(
-        python.define(
-            _format_tpm_names,
-            inputs={"in_files": ty.Any},
-            outputs={"file_format": ty.Any},
-        )(
+        python.define(_format_tpm_names, outputs=["file_format"])(
             execution={"keep_inputs": True, "remove_unnecessary_outputs": False},
             in_files=std_tpms,
         ),
@@ -582,7 +565,7 @@ def compute_iqms(
     # Add provenance
 
     # AFNI check smoothing
-    fwhm_interface = get_fwhmx()
+    fwhm_task = get_fwhmx()
     fwhm = workflow.add(fwhm_task, name="fwhm")
     # Harmonize
     homog = workflow.add(
@@ -624,7 +607,10 @@ def compute_iqms(
     def fwhm_fwhm_to_measures_in_fwhm_callable(in_: ty.Any) -> ty.Any:
         return _tofloat(in_)
 
-    fwhm_fwhm_to_measures_in_fwhm_callable = workflow.add(fwhm_fwhm_to_measures_in_fwhm_callable(in_=fwhm.fwhm), name="fwhm_fwhm_to_measures_in_fwhm_callable")
+    fwhm_fwhm_to_measures_in_fwhm_callable = workflow.add(
+        fwhm_fwhm_to_measures_in_fwhm_callable(in_=fwhm.fwhm),
+        name="fwhm_fwhm_to_measures_in_fwhm_callable"
+    )
 
     measures.inputs.in_fwhm = fwhm_fwhm_to_measures_in_fwhm_callable.out
     outputs_['measures'] = measures.out_qc

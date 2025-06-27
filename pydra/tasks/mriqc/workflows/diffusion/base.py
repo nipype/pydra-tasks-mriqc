@@ -200,12 +200,12 @@ def dmri_qc_workflow(
     # EPI to MNI registration
     spatial_norm = workflow.add(
         epi_mni_align(
-            wf_species=wf_species,
-            nipype_omp_nthreads=nipype_omp_nthreads,
             nipype_nprocs=nipype_nprocs,
+            nipype_omp_nthreads=nipype_omp_nthreads,
             wf_template_id=wf_template_id,
             exec_ants_float=exec_ants_float,
             exec_debug=exec_debug,
+            wf_species=wf_species,
             epi_mean=dwi_ref.out_file,
             epi_mask=dmri_bmsk.out_mask,
             name="spatial_norm",
@@ -240,10 +240,10 @@ def dmri_qc_workflow(
     # Generate outputs
     dwi_report_wf = workflow.add(
         init_dwi_report_wf(
+            wf_fd_thres=wf_fd_thres,
             exec_verbose_reports=exec_verbose_reports,
             exec_work_dir=exec_work_dir,
             wf_species=wf_species,
-            wf_fd_thres=wf_fd_thres,
             wf_biggest_file_gb=wf_biggest_file_gb,
             in_bdict=shells.b_dict,
             brain_mask=dmri_bmsk.out_mask,
@@ -304,14 +304,14 @@ def dmri_qc_workflow(
     # fmt: on
     outputs_["iqms_wf_out_file"] = iqms_wf.out_file
     outputs_["iqms_wf_noise_floor"] = iqms_wf.noise_floor
+    outputs_["dwi_report_wf_fa_report"] = dwi_report_wf.fa_report
     outputs_["dwi_report_wf_heatmap_report"] = dwi_report_wf.heatmap_report
     outputs_["dwi_report_wf_spikes_report"] = dwi_report_wf.spikes_report
-    outputs_["dwi_report_wf_fa_report"] = dwi_report_wf.fa_report
+    outputs_["dwi_report_wf_bmask_report"] = dwi_report_wf.bmask_report
     outputs_["dwi_report_wf_carpet_report"] = dwi_report_wf.carpet_report
     outputs_["dwi_report_wf_md_report"] = dwi_report_wf.md_report
     outputs_["dwi_report_wf_noise_report"] = dwi_report_wf.noise_report
     outputs_["dwi_report_wf_snr_report"] = dwi_report_wf.snr_report
-    outputs_["dwi_report_wf_bmask_report"] = dwi_report_wf.bmask_report
 
     return tuple(outputs_)
 

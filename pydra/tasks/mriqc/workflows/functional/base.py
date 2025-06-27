@@ -231,10 +231,7 @@ def hmc(
     )
     # Apply transforms to other echos
     apply_hmc = workflow.add(
-        python.define(
-            _apply_transforms,
-            inputs={"in_file": ty.Any, "in_xfm": ty.Any, "max_concurrent": ty.Any},
-        )(in_xfm=estimate_hm.oned_matrix_save),
+        python.define(_apply_transforms)(in_xfm=estimate_hm.oned_matrix_save),
         name="apply_hmc",
     )
     apply_hmc.inputs.inputs.max_concurrent = 4
@@ -433,9 +430,7 @@ def compute_iqms(
 
         spikes_fft = workflow.add(
             python.define(
-                slice_wise_fft,
-                inputs={"in_file": ty.Any},
-                outputs={"n_spikes": ty.Any, "out_spikes": ty.Any, "out_fft": ty.Any},
+                slice_wise_fft, outputs=["n_spikes", "out_spikes", "out_fft"]
             )(),
             name="spikes_fft",
         )
@@ -605,8 +600,8 @@ def fmri_qc_workflow(
         hmc(
             omp_nthreads=nipype_omp_nthreads,
             wf_deoblique=wf_deoblique,
-            wf_biggest_file_gb=wf_biggest_file_gb,
             wf_despike=wf_despike,
+            wf_biggest_file_gb=wf_biggest_file_gb,
             in_file=sanitize.out_file,
             name="hmcwf",
         )
@@ -623,20 +618,20 @@ def fmri_qc_workflow(
     # EPI to MNI registration
     ema = workflow.add(
         epi_mni_align(
-            wf_species=wf_species,
-            nipype_omp_nthreads=nipype_omp_nthreads,
             nipype_nprocs=nipype_nprocs,
+            nipype_omp_nthreads=nipype_omp_nthreads,
             wf_template_id=wf_template_id,
             exec_ants_float=exec_ants_float,
             exec_debug=exec_debug,
+            wf_species=wf_species,
             name="ema",
         )
     )
     # 7. Compute IQMs
     iqmswf = workflow.add(
         compute_iqms(
-            wf_biggest_file_gb=wf_biggest_file_gb,
             wf_fft_spikes_detector=wf_fft_spikes_detector,
+            wf_biggest_file_gb=wf_biggest_file_gb,
             in_ras=sanitize.out_file,
             epi_mean=mean.out_file,
             hmc_epi=hmcwf.out_file,
@@ -650,9 +645,9 @@ def fmri_qc_workflow(
         init_func_report_wf(
             exec_verbose_reports=exec_verbose_reports,
             exec_work_dir=exec_work_dir,
+            wf_fft_spikes_detector=wf_fft_spikes_detector,
             wf_species=wf_species,
             wf_biggest_file_gb=wf_biggest_file_gb,
-            wf_fft_spikes_detector=wf_fft_spikes_detector,
             meta_sidecar=metadata,
             in_ras=sanitize.out_file,
             epi_mean=mean.out_file,
@@ -705,12 +700,7 @@ def fmri_qc_workflow(
         from pydra.tasks.mriqc.workflows.anatomical.base import _binarize
 
         binarise_labels = workflow.add(
-            python.define(
-                _binarize,
-                inputs={"in_file": ty.Any, "threshold": ty.Any},
-                outputs={"out_file": ty.Any},
-            )(),
-            name="binarise_labels",
+            python.define(_binarize, outputs=["out_file"])(), name="binarise_labels"
         )
         # fmt: off
         binarise_labels.inputs.in_file = ema.epi_parc
@@ -726,17 +716,17 @@ def fmri_qc_workflow(
         outputs_['iqmswf_out_file'] = iqmswf.out_file
         # fmt: on
     outputs_["ema_report"] = ema.report
-    outputs_["iqmswf_outliers"] = iqmswf.outliers
-    outputs_["iqmswf_spikes"] = iqmswf.spikes
     outputs_["iqmswf_out_file"] = iqmswf.out_file
-    outputs_["iqmswf_spikes_num"] = iqmswf.spikes_num
-    outputs_["iqmswf_fft"] = iqmswf.fft
     outputs_["iqmswf_dvars"] = iqmswf.dvars
-    outputs_["func_report_wf_carpet_report"] = func_report_wf.carpet_report
-    outputs_["func_report_wf_background_report"] = func_report_wf.background_report
-    outputs_["func_report_wf_spikes_report"] = func_report_wf.spikes_report
-    outputs_["func_report_wf_mean_report"] = func_report_wf.mean_report
-    outputs_["func_report_wf_stdev_report"] = func_report_wf.stdev_report
+    outputs_["iqmswf_outliers"] = iqmswf.outliers
+    outputs_["iqmswf_fft"] = iqmswf.fft
+    outputs_["iqmswf_spikes_num"] = iqmswf.spikes_num
+    outputs_["iqmswf_spikes"] = iqmswf.spikes
     outputs_["func_report_wf_zoomed_report"] = func_report_wf.zoomed_report
+    outputs_["func_report_wf_background_report"] = func_report_wf.background_report
+    outputs_["func_report_wf_carpet_report"] = func_report_wf.carpet_report
+    outputs_["func_report_wf_stdev_report"] = func_report_wf.stdev_report
+    outputs_["func_report_wf_mean_report"] = func_report_wf.mean_report
+    outputs_["func_report_wf_spikes_report"] = func_report_wf.spikes_report
 
     return tuple(outputs_)

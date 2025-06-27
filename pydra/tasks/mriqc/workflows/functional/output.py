@@ -78,11 +78,7 @@ def init_func_report_wf(
     # Set FD threshold
 
     spmask = workflow.add(
-        python.define(
-            spikes_mask,
-            inputs={"in_file": ty.Any, "in_mask": ty.Any},
-            outputs={"out_file": ty.Any, "out_plot": ty.Any},
-        )(in_file=in_ras),
+        python.define(spikes_mask, outputs=["out_file", "out_plot"])(in_file=in_ras),
         name="spmask",
     )
     spikes_bg = workflow.add(

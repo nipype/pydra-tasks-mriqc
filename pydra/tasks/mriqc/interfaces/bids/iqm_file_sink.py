@@ -82,7 +82,7 @@ class IQMFileSink(python.Task["IQMFileSink.Outputs"]):
             self_dict["_always_run"] = True
         self_dict = {}
         out_file = _gen_outfile(
-            dismiss_entities=dismiss_entities, out_dir=out_dir, in_file=in_file
+            in_file=in_file, out_dir=out_dir, dismiss_entities=dismiss_entities
         )
 
         if root is not attrs.NOTHING:
@@ -158,7 +158,7 @@ def _add_field(name, value=attrs.NOTHING, _outputs=None, add_trait=None):
     return value
 
 
-def _gen_outfile(dismiss_entities=None, out_dir=None, in_file=None):
+def _gen_outfile(in_file=None, out_dir=None, dismiss_entities=None):
     out_dir = Path()
     if out_dir is not attrs.NOTHING:
         out_dir = Path(out_dir)
